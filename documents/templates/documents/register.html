@@ -1,0 +1,117 @@
+{% extends 'documents/base.html' %}
+{% block title %}Register — Paperless DMS{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-sm-10 col-md-8 col-lg-6">
+
+        <div class="auth-card card">
+          <!-- Card header -->
+          <div class="auth-header">
+            <div class="mb-3">
+              <i class="bi bi-person-plus-fill" style="font-size:3rem;"></i>
+            </div>
+            <h2 class="fw-bold mb-1">Create Account</h2>
+            <p class="mb-0 opacity-75">Join Paperless DMS today</p>
+          </div>
+
+          <!-- Card body -->
+          <div class="card-body p-4">
+            <form method="post" novalidate>
+              {% csrf_token %}
+
+              <div class="row g-3">
+                <!-- First Name -->
+                <div class="col-6">
+                  <label class="form-label fw-semibold">First Name</label>
+                  {{ form.first_name }}
+                  {% if form.first_name.errors %}
+                    <div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Last Name -->
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Last Name</label>
+                  {{ form.last_name }}
+                  {% if form.last_name.errors %}
+                    <div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Username -->
+                <div class="col-12">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-person me-1"></i>Username <span class="text-danger">*</span>
+                  </label>
+                  {{ form.username }}
+                  {% if form.username.errors %}
+                    <div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="col-12">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-envelope me-1"></i>Email Address
+                  </label>
+                  {{ form.email }}
+                  {% if form.email.errors %}
+                    <div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div class="col-6">
+                  <label class="form-label fw-semibold">
+                    <i class="bi bi-lock me-1"></i>Password <span class="text-danger">*</span>
+                  </label>
+                  {{ form.password }}
+                  {% if form.password.errors %}
+                    <div class="invalid-feedback d-block">{{ form.password.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="col-6">
+                  <label class="form-label fw-semibold">Confirm Password <span class="text-danger">*</span></label>
+                  {{ form.password_confirm }}
+                  {% if form.password_confirm.errors %}
+                    <div class="invalid-feedback d-block">{{ form.password_confirm.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Non-field errors -->
+                {% if form.non_field_errors %}
+                <div class="col-12">
+                  <div class="alert alert-danger py-2">
+                    {% for error in form.non_field_errors %}
+                      <div><i class="bi bi-exclamation-circle me-1"></i>{{ error }}</div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                <div class="col-12 mt-2">
+                  <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold">
+                    <i class="bi bi-person-check me-2"></i>Create My Account
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            <hr class="my-4" />
+            <p class="text-center text-muted mb-0">
+              Already have an account?
+              <a href="{% url 'login' %}" class="fw-semibold">Sign in here</a>
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

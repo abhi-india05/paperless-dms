@@ -1,0 +1,439 @@
+{% extends 'documents/base.html' %}
+{% block title %}Document Chatbot — Paperless DMS{% endblock %}
+
+{% block extra_css %}
+<style>
+  /* ── Layout ── */
+  .chat-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ── Message window ── */
+  #chatWindow {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    scroll-behavior: smooth;
+  }
+
+  /* ── Bubbles ── */
+  .msg-row {
+    display: flex;
+    align-items: flex-end;
+    gap: .6rem;
+  }
+  .msg-row.user  { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .avatar.bot  { background: linear-gradient(135deg,#2563eb,#1e40af); color:#fff; }
+  .avatar.user { background: #e2e8f0; color:#374151; }
+
+  .bubble {
+    max-width: 72%;
+    padding: .75rem 1rem;
+    border-radius: 18px;
+    line-height: 1.6;
+    font-size: .92rem;
+  }
+  .bubble.bot {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-bottom-left-radius: 4px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+  }
+  .bubble.user {
+    background: linear-gradient(135deg,#2563eb,#1e40af);
+    color: #fff;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* markdown inside bot bubble */
+  .bubble.bot h1,.bubble.bot h2,.bubble.bot h3 { font-size:1rem; font-weight:700; margin:.5rem 0 .25rem; }
+  .bubble.bot ul,.bubble.bot ol { padding-left:1.25rem; margin:.25rem 0; }
+  .bubble.bot li { margin-bottom:.15rem; }
+  .bubble.bot strong { font-weight:700; }
+  .bubble.bot code {
+    background:#f1f5f9; border-radius:4px;
+    padding:.1em .35em; font-size:.85em;
+  }
+  .bubble.bot pre {
+    background:#f1f5f9; border-radius:8px;
+    padding:.75rem; overflow-x:auto; margin:.5rem 0;
+  }
+
+  /* docs-used pill strip */
+  .docs-used {
+    font-size:.72rem;
+    color: #6b7280;
+    margin-top:.4rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: .3rem;
+    align-items: center;
+  }
+  .docs-used .pill {
+    background:#eff6ff;
+    border:1px solid #bfdbfe;
+    color:#1d4ed8;
+    border-radius:20px;
+    padding:.1em .55em;
+  }
+
+  /* ── Typing indicator ── */
+  .typing-indicator {
+    display: flex; align-items: center; gap: 5px;
+    padding: .6rem .9rem;
+  }
+  .typing-indicator span {
+    width: 8px; height: 8px;
+    background: #9ca3af;
+    border-radius: 50%;
+    animation: bounce .9s infinite;
+  }
+  .typing-indicator span:nth-child(2) { animation-delay:.15s; }
+  .typing-indicator span:nth-child(3) { animation-delay:.3s; }
+  @keyframes bounce {
+    0%,60%,100% { transform: translateY(0); }
+    30%          { transform: translateY(-6px); }
+  }
+
+  /* ── Input bar ── */
+  #inputBar {
+    background: #fff;
+    border-top: 1px solid #e5e7eb;
+    padding: .85rem 1rem;
+  }
+  #userInput {
+    border-radius: 24px;
+    padding: .6rem 1.1rem;
+    resize: none;
+    overflow: hidden;
+    line-height: 1.5;
+    border: 1.5px solid #d1d5db;
+    transition: border-color .2s;
+  }
+  #userInput:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    outline: none;
+  }
+  #sendBtn {
+    border-radius: 50%;
+    width: 44px; height: 44px;
+    padding: 0;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* ── Suggestion chips ── */
+  .chip {
+    border-radius: 20px;
+    font-size: .8rem;
+    border: 1.5px solid #d1d5db;
+    background: #fff;
+    color: #374151;
+    cursor: pointer;
+    padding: .3rem .85rem;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .chip:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="container-fluid px-3 py-0 h-100">
+  <div class="chat-wrapper">
+
+    <!-- ── Header ── -->
+    <div class="d-flex align-items-center gap-3 py-3 border-bottom">
+      <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i>
+      </a>
+      <div class="avatar bot" style="width:40px;height:40px;font-size:1.2rem;">
+        <i class="bi bi-robot"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold mb-0">Document Assistant</h5>
+        <small class="text-muted">
+          Powered by Gemini · Ask anything about your documents
+        </small>
+      </div>
+      <button class="btn btn-outline-danger btn-sm ms-auto" id="clearBtn" title="Clear chat">
+        <i class="bi bi-trash me-1"></i>Clear
+      </button>
+    </div>
+
+    <!-- ── Chat window ── -->
+    <div id="chatWindow">
+      <!-- Welcome message injected by JS on load -->
+    </div>
+
+    <!-- ── Suggestion chips ── -->
+    <div class="px-3 pb-2 d-flex flex-wrap gap-2" id="suggestions">
+      <button class="chip" data-q="List all my documents">
+        <i class="bi bi-list-ul me-1"></i>List all documents
+      </button>
+      <button class="chip" data-q="Summarize my most recent document">
+        <i class="bi bi-card-text me-1"></i>Summarize latest doc
+      </button>
+      <button class="chip" data-q="What categories do I have documents in?">
+        <i class="bi bi-folder me-1"></i>My categories
+      </button>
+      <button class="chip" data-q="Which documents contain financial information?">
+        <i class="bi bi-currency-dollar me-1"></i>Financial docs
+      </button>
+      <button class="chip" data-q="Find all invoice or receipt documents">
+        <i class="bi bi-receipt me-1"></i>Invoices & receipts
+      </button>
+    </div>
+
+    <!-- ── Input bar ── -->
+    <div id="inputBar">
+      <div class="d-flex align-items-end gap-2">
+        <textarea id="userInput" class="form-control"
+                  rows="1" placeholder="Ask anything about your documents…"
+                  maxlength="1000"></textarea>
+        <button id="sendBtn" class="btn btn-primary" title="Send">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+      <p class="text-muted text-center mb-0 mt-1" style="font-size:.72rem;">
+        Responses are based on your uploaded documents and their OCR text.
+        Always verify critical information.
+      </p>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+
+{% block extra_js %}
+<!-- marked.js to render markdown in bot responses -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<script>
+// ──────────────────────────────────────────────────────────────────────────────
+// Config
+// ──────────────────────────────────────────────────────────────────────────────
+const CSRF_TOKEN = '{{ csrf_token }}';
+const ASK_URL    = '{% url "chatbot_ask" %}';
+
+marked.setOptions({ breaks: true, gfm: true });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// DOM helpers
+// ──────────────────────────────────────────────────────────────────────────────
+const chatWindow = document.getElementById('chatWindow');
+const userInput  = document.getElementById('userInput');
+const sendBtn    = document.getElementById('sendBtn');
+
+function scrollToBottom() {
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Render a message bubble
+// ──────────────────────────────────────────────────────────────────────────────
+function appendMessage(role, text, docsUsed = []) {
+  const isUser = role === 'user';
+  const row = document.createElement('div');
+  row.className = `msg-row ${isUser ? 'user' : 'bot'}`;
+
+  // Avatar
+  const avatar = document.createElement('div');
+  avatar.className = `avatar ${isUser ? 'user' : 'bot'}`;
+  avatar.innerHTML = isUser
+    ? '<i class="bi bi-person-fill"></i>'
+    : '<i class="bi bi-robot"></i>';
+
+  // Bubble wrapper
+  const bubbleWrap = document.createElement('div');
+
+  // Bubble
+  const bubble = document.createElement('div');
+  bubble.className = `bubble ${isUser ? 'user' : 'bot'}`;
+
+  if (isUser) {
+    // Plain text for user messages (escape HTML)
+    bubble.textContent = text;
+  } else {
+    // Render markdown for bot messages
+    bubble.innerHTML = marked.parse(text);
+  }
+
+  bubbleWrap.appendChild(bubble);
+
+  // Docs-used strip (only for bot messages with docs)
+  if (!isUser && docsUsed.length > 0) {
+    const strip = document.createElement('div');
+    strip.className = 'docs-used ms-1';
+    strip.innerHTML = '<i class="bi bi-files me-1"></i>Sources: '
+      + docsUsed.map(d => `<span class="pill">${d}</span>`).join('');
+    bubbleWrap.appendChild(strip);
+  }
+
+  row.appendChild(avatar);
+  row.appendChild(bubbleWrap);
+  chatWindow.appendChild(row);
+  scrollToBottom();
+  return row;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Typing indicator
+// ──────────────────────────────────────────────────────────────────────────────
+let typingRow = null;
+
+function showTyping() {
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.innerHTML = `
+    <div class="avatar bot"><i class="bi bi-robot"></i></div>
+    <div class="bubble bot">
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    </div>`;
+  chatWindow.appendChild(row);
+  scrollToBottom();
+  typingRow = row;
+}
+
+function hideTyping() {
+  if (typingRow) { typingRow.remove(); typingRow = null; }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Send message
+// ──────────────────────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = userInput.value.trim();
+  if (!text) return;
+
+  // Hide suggestions after first real message
+  document.getElementById('suggestions').style.display = 'none';
+
+  // Show user bubble
+  appendMessage('user', text);
+  userInput.value = '';
+  autoResize();
+
+  // Disable input while waiting
+  userInput.disabled = true;
+  sendBtn.disabled   = true;
+  showTyping();
+
+  try {
+    const res = await fetch(ASK_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': CSRF_TOKEN,
+      },
+      body: JSON.stringify({ message: text }),
+    });
+
+    hideTyping();
+
+    const data = await res.json();
+
+    if (!res.ok || data.error) {
+      appendMessage('bot',
+        `⚠️ **Error:** ${data.error || 'Something went wrong. Please try again.'}`
+      );
+    } else {
+      appendMessage('bot', data.response, data.docs_used || []);
+    }
+
+  } catch (err) {
+    hideTyping();
+    appendMessage('bot', '⚠️ **Network error.** Could not reach the server. Please check your connection.');
+  } finally {
+    userInput.disabled = false;
+    sendBtn.disabled   = false;
+    userInput.focus();
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Auto-resize textarea
+// ──────────────────────────────────────────────────────────────────────────────
+function autoResize() {
+  userInput.style.height = 'auto';
+  userInput.style.height = Math.min(userInput.scrollHeight, 140) + 'px';
+}
+
+userInput.addEventListener('input', autoResize);
+userInput.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+sendBtn.addEventListener('click', sendMessage);
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Suggestion chips
+// ──────────────────────────────────────────────────────────────────────────────
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', function () {
+    userInput.value = this.dataset.q;
+    sendMessage();
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Clear chat
+// ──────────────────────────────────────────────────────────────────────────────
+document.getElementById('clearBtn').addEventListener('click', function () {
+  if (!confirm('Clear the conversation?')) return;
+  chatWindow.innerHTML = '';
+  document.getElementById('suggestions').style.display = 'flex';
+  // Reset server-side session history via page reload
+  location.reload();
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Welcome message on load
+// ──────────────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  appendMessage('bot',
+    `👋 Hello **{{ request.user.get_full_name|default:request.user.username }}**! 
+I'm your document assistant, powered by Gemini.
+
+I have access to all your uploaded documents including their **OCR-extracted text**, **categories**, **tags**, and **notes**.
+
+Here are some things you can ask me:
+- *"Summarize document X"*
+- *"What invoices do I have from 2024?"*
+- *"Find all documents that mention [keyword]"*
+- *"List documents in the Finance category"*
+- *"What does document X say about [topic]?"*
+
+Use the suggestion buttons below or type your own question!`
+  );
+  userInput.focus();
+});
+</script>
+{% endblock %}

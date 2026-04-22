@@ -1,0 +1,157 @@
+{% extends 'documents/base.html' %}
+{% block title %}Upload Document — Paperless DMS{% endblock %}
+{% block nav_upload %}active{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:760px;">
+
+  <!-- ── Header ── -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h3 class="fw-bold mb-0"><i class="bi bi-cloud-upload-fill text-primary me-2"></i>Upload Document</h3>
+      <p class="text-muted mb-0 small">Supported formats: PDF, JPG, PNG (max 10 MB)</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-4">
+      <form method="post" enctype="multipart/form-data" novalidate id="uploadForm">
+        {% csrf_token %}
+
+        <div class="row g-4">
+
+          <!-- Document Title -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              Document Title <span class="text-danger">*</span>
+            </label>
+            {{ form.title }}
+            {% if form.title.errors %}
+              <div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- File Upload Drop Zone -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">
+              File <span class="text-danger">*</span>
+            </label>
+            <div class="border rounded-3 p-4 text-center bg-light" id="dropZone"
+                 style="border-style:dashed !important; cursor:pointer;"
+                 onclick="document.getElementById('id_file').click()">
+              <i class="bi bi-cloud-arrow-up fs-1 text-primary mb-2 d-block"></i>
+              <p class="mb-1 fw-semibold">Click to browse or drag & drop</p>
+              <p class="text-muted small mb-2">PDF, JPG, PNG — up to 10 MB</p>
+              <div id="filePreview" class="d-none">
+                <span class="badge bg-success fs-6" id="fileNameBadge">
+                  <i class="bi bi-check-circle me-1"></i><span id="fileName"></span>
+                </span>
+              </div>
+            </div>
+            {{ form.file }}
+            {% if form.file.errors %}
+              <div class="invalid-feedback d-block">{{ form.file.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Category -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Category</label>
+            {{ form.category }}
+            {% if form.category.errors %}
+              <div class="invalid-feedback d-block">{{ form.category.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Tags -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">
+              Tags
+              <i class="bi bi-info-circle text-muted" data-bs-toggle="tooltip"
+                 title="Separate multiple tags with commas"></i>
+            </label>
+            {{ form.tags_input }}
+            <div class="form-text">e.g. invoice, 2024, finance</div>
+          </div>
+
+          <!-- Notes -->
+          <div class="col-12">
+            <label class="form-label fw-semibold">Notes</label>
+            {{ form.notes }}
+          </div>
+
+          <!-- OCR Info Banner -->
+          <div class="col-12">
+            <div class="alert alert-info d-flex align-items-start gap-2 py-2 mb-0">
+              <i class="bi bi-robot fs-5 mt-1 flex-shrink-0"></i>
+              <div>
+                <strong>OCR Processing:</strong> Text will be automatically extracted from
+                your document after upload using Tesseract OCR. This allows full-text search
+                across all your documents.
+              </div>
+            </div>
+          </div>
+
+          <!-- Submit -->
+          <div class="col-12">
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold" id="submitBtn">
+              <i class="bi bi-cloud-upload me-2"></i>Upload &amp; Extract Text
+            </button>
+            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2 px-4 py-2">
+              Cancel
+            </a>
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+  // Hide the real file input but keep it functional
+  $('#id_file').hide();
+
+  // Show selected file name
+  $('#id_file').on('change', function () {
+    const file = this.files[0];
+    if (file) {
+      $('#fileName').text(file.name);
+      $('#filePreview').removeClass('d-none');
+    }
+  });
+
+  // Drag-and-drop visual feedback
+  const zone = document.getElementById('dropZone');
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-primary'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('border-primary'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault();
+    zone.classList.remove('border-primary');
+    const dt = e.dataTransfer;
+    if (dt.files.length) {
+      const input = document.getElementById('id_file');
+      input.files = dt.files;
+      $(input).trigger('change');
+    }
+  });
+
+  // Loading state on submit
+  $('#uploadForm').on('submit', function () {
+    const btn = $('#submitBtn');
+    btn.html('<span class="spinner-border spinner-border-sm me-2"></span>Processing OCR...').prop('disabled', true);
+  });
+
+  // Enable Bootstrap tooltips
+  $('[data-bs-toggle="tooltip"]').each(function () {
+    new bootstrap.Tooltip(this);
+  });
+});
+</script>
+{% endblock %}

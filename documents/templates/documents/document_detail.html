@@ -1,0 +1,150 @@
+{% extends 'documents/base.html' %}
+{% block title %}{{ document.title }} — Paperless DMS{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:900px;">
+
+  <!-- ── Back Button & Title ── -->
+  <div class="d-flex align-items-center gap-3 mb-4">
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <h3 class="fw-bold mb-0">
+        <i class="bi {{ document.get_file_icon }} me-2"></i>{{ document.title }}
+      </h3>
+      <small class="text-muted">
+        Uploaded {{ document.upload_date|date:"d M Y, H:i" }}
+        by {{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}
+      </small>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- ── Left: Metadata ── -->
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header fw-semibold bg-light">
+          <i class="bi bi-info-circle me-2 text-primary"></i>Document Info
+        </div>
+        <div class="card-body">
+          <table class="table table-sm table-borderless mb-0">
+            <tr>
+              <td class="text-muted small">Type</td>
+              <td>
+                <span class="badge bg-secondary text-uppercase">{{ document.file_type }}</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted small">Category</td>
+              <td>
+                {% if document.category %}
+                  <span class="badge bg-info text-dark">{{ document.category.name }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted small">Tags</td>
+              <td>
+                {% for tag in document.tags.all %}
+                  <span class="badge bg-secondary tag-badge me-1">{{ tag.name }}</span>
+                {% empty %}
+                  <span class="text-muted">—</span>
+                {% endfor %}
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted small">Uploaded</td>
+              <td class="small">{{ document.upload_date|date:"d M Y" }}</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      {% if document.notes %}
+      <div class="card mt-3">
+        <div class="card-header fw-semibold bg-light">
+          <i class="bi bi-sticky me-2 text-warning"></i>Notes
+        </div>
+        <div class="card-body">
+          <p class="mb-0 small">{{ document.notes }}</p>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Actions -->
+      <div class="card mt-3">
+        <div class="card-body d-flex flex-column gap-2">
+          <a href="{% url 'document_file' document.pk %}" target="_blank"
+             class="btn btn-primary">
+            <i class="bi bi-eye me-2"></i>Open / View File
+          </a>
+          <a href="{% url 'document_file' document.pk %}?download=1"
+             class="btn btn-outline-secondary">
+            <i class="bi bi-download me-2"></i>Download
+          </a>
+          <a href="{% url 'document_delete' document.pk %}"
+             class="btn btn-outline-danger">
+            <i class="bi bi-trash me-2"></i>Delete Document
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Right: Extracted Text ── -->
+    <div class="col-md-8">
+      <div class="card h-100">
+        <div class="card-header d-flex align-items-center justify-content-between bg-light">
+          <span class="fw-semibold">
+            <i class="bi bi-robot me-2 text-primary"></i>OCR Extracted Text
+          </span>
+          {% if document.extracted_text %}
+          <button class="btn btn-sm btn-outline-secondary" id="copyBtn">
+            <i class="bi bi-clipboard me-1"></i>Copy
+          </button>
+          {% endif %}
+        </div>
+        <div class="card-body">
+          {% if document.extracted_text %}
+            <div class="extracted-text-box" id="extractedText">{{ document.extracted_text }}</div>
+            <p class="text-muted small mt-2 mb-0">
+              <i class="bi bi-type me-1"></i>
+              {{ document.extracted_text|wordcount }} words extracted
+            </p>
+          {% else %}
+            <div class="text-center py-5 text-muted">
+              <i class="bi bi-file-earmark-x fs-1 d-block mb-2"></i>
+              No text was extracted from this document.
+              <br>
+              <small>
+                The file may be a scanned image without readable text,
+                or OCR was unable to process it.
+              </small>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+  $('#copyBtn').on('click', function () {
+    const text = $('#extractedText').text().trim();
+    navigator.clipboard.writeText(text).then(() => {
+      $(this).html('<i class="bi bi-check2 me-1"></i>Copied!').addClass('btn-success').removeClass('btn-outline-secondary');
+      setTimeout(() => {
+        $(this).html('<i class="bi bi-clipboard me-1"></i>Copy').removeClass('btn-success').addClass('btn-outline-secondary');
+      }, 2000);
+    });
+  });
+});
+</script>
+{% endblock %}

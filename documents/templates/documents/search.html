@@ -1,0 +1,170 @@
+{% extends 'documents/base.html' %}
+{% block title %}Search — Paperless DMS{% endblock %}
+{% block nav_search %}active{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+
+  <!-- ── Page Header ── -->
+  <div class="mb-4">
+    <h3 class="fw-bold mb-0"><i class="bi bi-search text-primary me-2"></i>Search Documents</h3>
+    <p class="text-muted small mb-0">Search across document titles, extracted text, notes, and tags</p>
+  </div>
+
+  <!-- ── Search Form ── -->
+  <div class="card mb-4">
+    <div class="card-body p-4">
+      <form method="get" id="searchForm" novalidate>
+        <div class="row g-3 align-items-end">
+
+          <!-- Keyword input -->
+          <div class="col-md-6">
+            <label class="form-label fw-semibold">Keyword</label>
+            {{ form.query }}
+          </div>
+
+          <!-- Category filter -->
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Category</label>
+            {{ form.category }}
+          </div>
+
+          <!-- Tag filter -->
+          <div class="col-md-3">
+            <label class="form-label fw-semibold">Tag</label>
+            {{ form.tag }}
+          </div>
+
+          <!-- Buttons -->
+          <div class="col-12 d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-search me-2"></i>Search
+            </button>
+            {% if searched %}
+            <a href="{% url 'search' %}" class="btn btn-outline-secondary">
+              <i class="bi bi-x-circle me-1"></i>Clear
+            </a>
+            {% endif %}
+          </div>
+
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ── Results ── -->
+  {% if searched %}
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h5 class="fw-bold mb-0">
+      {% if query %}
+        Results for "<span class="text-primary">{{ query }}</span>"
+      {% else %}
+        All matching documents
+      {% endif %}
+    </h5>
+    <span class="badge bg-primary fs-6">{{ result_count }} found</span>
+  </div>
+
+  {% if results %}
+  <div class="row g-3" id="resultsContainer">
+    {% for doc in results %}
+    <div class="col-md-6 col-lg-4 result-card">
+      <div class="card h-100">
+        <div class="card-body">
+          <div class="d-flex align-items-start gap-3 mb-3">
+            <i class="bi {{ doc.get_file_icon }} fs-2 flex-shrink-0"></i>
+            <div class="overflow-hidden">
+              <h6 class="fw-bold mb-1 text-truncate">{{ doc.title }}</h6>
+              <small class="text-muted">
+                <i class="bi bi-calendar3 me-1"></i>{{ doc.upload_date|date:"d M Y" }}
+              </small>
+            </div>
+          </div>
+
+          {% if doc.category %}
+          <span class="badge bg-info text-dark mb-2">
+            <i class="bi bi-folder me-1"></i>{{ doc.category.name }}
+          </span>
+          {% endif %}
+
+          {% for tag in doc.tags.all %}
+            <span class="badge bg-secondary tag-badge mb-2">{{ tag.name }}</span>
+          {% endfor %}
+
+          <!-- Snippet of extracted text -->
+          {% if doc.extracted_text %}
+          <div class="mt-2">
+            <p class="text-muted small mb-0 border-start border-primary ps-2"
+               style="max-height:60px; overflow:hidden;">
+              {{ doc.extracted_text|truncatechars:180 }}
+            </p>
+          </div>
+          {% endif %}
+        </div>
+
+        <div class="card-footer bg-transparent d-flex gap-2">
+          <a href="{% url 'document_detail' doc.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+            <i class="bi bi-eye me-1"></i>View
+          </a>
+          <a href="{% url 'document_file' doc.pk %}" target="_blank" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-download"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-search" style="font-size:4rem; color:#d1d5db;"></i>
+    <h5 class="mt-3 text-muted">No documents found</h5>
+    <p class="text-muted">Try different keywords or adjust your filters.</p>
+    <a href="{% url 'upload' %}" class="btn btn-primary mt-2">
+      <i class="bi bi-cloud-upload me-2"></i>Upload a document
+    </a>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <!-- Idle state -->
+  <div class="text-center py-5">
+    <i class="bi bi-file-earmark-search" style="font-size:5rem; color:#d1d5db;"></i>
+    <h5 class="mt-4 text-muted">Start searching your documents</h5>
+    <p class="text-muted">
+      Enter a keyword above to search across all your document titles,
+      extracted OCR text, notes, and tags.
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(function () {
+  // Client-side live filter — hides cards that don't match the typed query
+  // without submitting the form (complements server-side search)
+  let searchTimer;
+  $('#searchInput').on('input', function () {
+    clearTimeout(searchTimer);
+    const term = $(this).val().toLowerCase().trim();
+
+    // If the results are already rendered, filter them live
+    if ($('#resultsContainer').length) {
+      searchTimer = setTimeout(function () {
+        if (!term) {
+          $('.result-card').show();
+          return;
+        }
+        $('.result-card').each(function () {
+          const text = $(this).text().toLowerCase();
+          $(this).toggle(text.includes(term));
+        });
+      }, 200);
+    }
+  });
+});
+</script>
+{% endblock %}
