@@ -140,10 +140,14 @@ mysql_options = {
     'charset': 'utf8mb4',
 }
 
+mysql_options = {
+    'charset': 'utf8mb4',
+}
+
 if MYSQL_SSL_CA and Path(MYSQL_SSL_CA).exists():
     mysql_options['ssl'] = {'ca': MYSQL_SSL_CA}
-elif MYSQL_SSL_MODE:
-    mysql_options['ssl_mode'] = MYSQL_SSL_MODE
+else:
+    mysql_options['ssl'] = {}
 
 DATABASES = {
     'default': {
