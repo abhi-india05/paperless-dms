@@ -2,6 +2,8 @@ import os
 import re
 from pathlib import Path
 
+import mysql.connector
+mysql.connector.install_as_MySQLdb()
 # ──────────────────────────────────────────────────────────────────────────────
 # Base Paths
 # ──────────────────────────────────────────────────────────────────────────────
@@ -83,7 +85,7 @@ GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'ge
 # SECURITY WARNING: Don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Application Definition
