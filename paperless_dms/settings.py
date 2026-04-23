@@ -2,8 +2,8 @@ import os
 import re
 from pathlib import Path
 
-import mysql.connector
-mysql.connector.install_as_MySQLdb()
+import pymysql
+pymysql.install_as_MySQLdb()
 # ──────────────────────────────────────────────────────────────────────────────
 # Base Paths
 # ──────────────────────────────────────────────────────────────────────────────
