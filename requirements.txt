@@ -1,8 +1,8 @@
 Django==4.2.9
-mysqlclient==2.2.3
+mysql-connector-python
 pytesseract==0.3.10
 pdfplumber==0.10.3
-PyMuPDF==1.23.8
+PyMuPDF>=1.24.0
 google-generativeai==0.8.6
 Python==3.11.9
 Pillow==10.4.0
