@@ -1,5 +1,5 @@
 Django==4.2.9
-mysql-connector-python
+PyMySQL
 pytesseract==0.3.10
 pdfplumber==0.10.3
 PyMuPDF>=1.24.0
