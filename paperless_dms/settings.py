@@ -86,6 +86,9 @@ GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-1.5-flash').strip() or 'ge
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    "https://paperless-dms-2.onrender.com"
+]
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Application Definition
